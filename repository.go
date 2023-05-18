@@ -9,6 +9,8 @@ import (
 	model "github.com/owasp-amass/open-asset-model"
 )
 
+type DBType string
+
 const (
 	Postgres DBType = "postgres"
 	SQLite   DBType = "sqlite"

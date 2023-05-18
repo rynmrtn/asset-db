@@ -1,28 +1,20 @@
 package types
 
-type AssetType string
+import model "github.com/owasp-amass/open-asset-model"
 
-const (
-	FQDN             AssetType = "FQDN"
-	AutonomousSystem AssetType = "ASN"
-	RIROrganization  AssetType = "RIROrg"
-	IPAddress        AssetType = "IPAddress"
-	Netblock         AssetType = "Netblock"
-)
-
-type Asset interface {
-	AssetType() AssetType
-	JSON() ([]byte, error)
-}
+// type Asset interface {
+// 	AssetType() model.AssetType
+// 	JSON() ([]byte, error)
+// }
 
 type StoredAsset struct {
 	ID    string
-	Asset Asset
+	Asset model.Asset
 }
 
 type StoredRelation struct {
-	ID          string
-	Type        string
-	FromAssetID string
-	ToAssetID   string
+	ID        string
+	Type      string
+	FromAsset StoredAsset
+	ToAsset   StoredAsset
 }

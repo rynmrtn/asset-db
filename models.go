@@ -1,12 +1,13 @@
-package gorm
+package assetdb
 
 import (
 	"encoding/json"
 	"fmt"
 	"time"
 
-	open_asset_model "github.com/owasp-amass/asset-db/open_asset_model"
-	"github.com/owasp-amass/asset-db/types"
+	oam "github.com/owasp-amass/open-asset-model"
+	"github.com/owasp-amass/open-asset-model/domain"
+	"github.com/owasp-amass/open-asset-model/network"
 
 	"gorm.io/datatypes"
 )
@@ -18,43 +19,45 @@ type Asset struct {
 	Content   datatypes.JSON
 }
 
-func (a Asset) Parse() (types.Asset, error) {
-	var asset types.Asset
+// TODO: not thrilled with this .. doesn't scale well when new types
+// are to open-asset-oam
+func (a Asset) Parse() (oam.Asset, error) {
+	var asset oam.Asset
 	// TODO: should transform a.Type to AssetType ?
 	switch a.Type {
-	case string(types.FQDN):
-		var fqdn open_asset_model.FQDN
+	case string(oam.FQDN):
+		var fqdn domain.FQDN
 		err := json.Unmarshal(a.Content, &fqdn)
 		if err != nil {
-			return open_asset_model.FQDN{}, err
+			return domain.FQDN{}, err
 		}
 		asset = fqdn
-	case string(types.IPAddress):
-		var ip open_asset_model.IPAddress
+	case string(oam.IPAddress):
+		var ip network.IPAddress
 		err := json.Unmarshal(a.Content, &ip)
 		if err != nil {
-			return open_asset_model.IPAddress{}, err
+			return network.IPAddress{}, err
 		}
 		asset = ip
-	case string(types.AutonomousSystem):
-		var asn open_asset_model.AutonomousSystem
+	case string(oam.ASN):
+		var asn network.AutonomousSystem
 		err := json.Unmarshal(a.Content, &asn)
 		if err != nil {
-			return open_asset_model.AutonomousSystem{}, err
+			return network.AutonomousSystem{}, err
 		}
 		asset = asn
-	case string(types.RIROrganization):
-		var rir open_asset_model.RIROrganization
+	case string(oam.RIROrg):
+		var rir network.RIROrganization
 		err := json.Unmarshal(a.Content, &rir)
 		if err != nil {
-			return open_asset_model.RIROrganization{}, err
+			return network.RIROrganization{}, err
 		}
 		asset = rir
-	case string(types.Netblock):
-		var netblock open_asset_model.Netblock
+	case string(oam.Netblock):
+		var netblock network.Netblock
 		err := json.Unmarshal(a.Content, &netblock)
 		if err != nil {
-			return open_asset_model.Netblock{}, err
+			return network.Netblock{}, err
 		}
 		asset = netblock
 	default:
@@ -66,12 +69,12 @@ func (a Asset) Parse() (types.Asset, error) {
 
 func (a Asset) JSONQuery() (*datatypes.JSONQueryExpression, error) {
 	switch a.Type {
-	case string(types.FQDN):
+	case string(oam.FQDN):
 		asset, err := a.Parse()
 		if err != nil {
 			return nil, err
 		}
-		assetData := asset.(open_asset_model.FQDN)
+		assetData := asset.(domain.FQDN)
 		return datatypes.JSONQuery("content").Equals(assetData.Name, "name").Equals(assetData.Name, "name2"), nil
 	default:
 		return nil, fmt.Errorf("unknown asset type: %s", a.Type)

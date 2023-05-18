@@ -64,7 +64,7 @@ func (a Asset) Parse() (types.Asset, error) {
 	return asset, nil
 }
 
-func (a Asset) GetJSONQuery() (*datatypes.JSONQueryExpression, error) {
+func (a Asset) JSONQuery() (*datatypes.JSONQueryExpression, error) {
 	switch a.Type {
 	case string(types.FQDN):
 		asset, err := a.Parse()

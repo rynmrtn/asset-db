@@ -29,28 +29,28 @@ func main() {
 	// discover new asset
 	newAsset := open_asset_model.FQDN{Name: "domain.com"}
 
-	// insert asset into database
-	firstAsset, err := assetService.Insert(newAsset, nil, nil)
+	// create asset into database
+	firstAsset, err := assetService.Create(newAsset, nil, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println("asset inserted:", firstAsset)
+	fmt.Println("asset Createed:", firstAsset)
 
 	// discover new asset and its relation to the previous asset
 	newAsset2 := open_asset_model.FQDN{Name: "domain.subdomain.com"}
 
-	// insert asset into database and create relation to the previous asset
+	// Create asset into database and create relation to the previous asset
 	relationType := "subdomain"
-	secondAsset, err := assetService.Insert(newAsset2, &firstAsset, &relationType)
+	secondAsset, err := assetService.Create(newAsset2, &firstAsset, &relationType)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println("asset inserted:", secondAsset)
+	fmt.Println("asset Createed:", secondAsset)
 
 	// get asset by id from database
-	storedAsset, err := assetService.GetById(firstAsset.ID)
+	storedAsset, err := assetService.FindById(firstAsset.ID)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	}

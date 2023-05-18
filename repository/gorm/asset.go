@@ -18,7 +18,7 @@ func NewAssetRepository(db *gorm.DB) *assetRepository {
 	}
 }
 
-func (ar *assetRepository) Insert(assetData types.Asset) (types.StoredAsset, error) {
+func (ar *assetRepository) Create(assetData types.Asset) (types.StoredAsset, error) {
 	jsonContent, err := assetData.JSON()
 	if err != nil {
 		return types.StoredAsset{}, err
@@ -40,7 +40,7 @@ func (ar *assetRepository) Insert(assetData types.Asset) (types.StoredAsset, err
 	}, nil
 }
 
-func (ar *assetRepository) GetByContent(assetData types.Asset) (types.StoredAsset, error) {
+func (ar *assetRepository) FindByContent(assetData types.Asset) (types.StoredAsset, error) {
 	jsonContent, err := assetData.JSON()
 	if err != nil {
 		return types.StoredAsset{}, err
@@ -51,7 +51,7 @@ func (ar *assetRepository) GetByContent(assetData types.Asset) (types.StoredAsse
 		Content: jsonContent,
 	}
 
-	jsonQuery, err := asset.GetJSONQuery()
+	jsonQuery, err := asset.JSONQuery()
 	if err != nil {
 		return types.StoredAsset{}, err
 	}
@@ -67,7 +67,7 @@ func (ar *assetRepository) GetByContent(assetData types.Asset) (types.StoredAsse
 	}, nil
 }
 
-func (ar *assetRepository) GetById(assetId int64) (types.StoredAsset, error) {
+func (ar *assetRepository) FindById(assetId int64) (types.StoredAsset, error) {
 	asset := Asset{ID: assetId}
 	result := ar.db.First(&asset)
 	if result.Error != nil {

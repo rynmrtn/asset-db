@@ -15,6 +15,6 @@ func NewRelationService(relationRepository repository.RelationRepository) *relat
 	}
 }
 
-func (rs *relationService) Insert(relationType string, newAssetId string, srcAssetId string) (types.StoredRelation, error) {
-	return rs.relationRepository.Insert(relationType, newAssetId, srcAssetId)
+func (rs *relationService) Create(relationType string, newAssetId string, srcAssetId string) (types.StoredRelation, error) {
+	return rs.relationRepository.Create(relationType, newAssetId, srcAssetId)
 }

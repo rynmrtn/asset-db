@@ -17,7 +17,7 @@ func NewRelationRepository(db *gorm.DB) *relationRepository {
 	}
 }
 
-func (rr *relationRepository) Insert(relationType string, newAssetId string, srcAssetId string) (types.StoredRelation, error) {
+func (rr *relationRepository) Create(relationType string, newAssetId string, srcAssetId string) (types.StoredRelation, error) {
 	fromAssetId, err := strconv.ParseInt(srcAssetId, 10, 64)
 	if err != nil {
 		return types.StoredRelation{}, err

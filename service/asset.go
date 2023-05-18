@@ -23,21 +23,21 @@ func NewAssetService(assetRepository repository.AssetRepository, relationService
 	}
 }
 
-// Insert is a method that inserts a new asset in the database.
+// Create is a method that creates a new asset in the database.
 // It receives an asset, a source asset and a relation type,
-// it inserts the asset in the database, creates a relation between the two assets
+// it creates the asset in the database, creates a relation between the two assets
 // and returns a new asset and an error if it exists
-func (as *assetService) Insert(asset types.Asset, srcAsset *types.StoredAsset, relationType *string) (types.StoredAsset, error) {
+func (as *assetService) Create(asset types.Asset, srcAsset *types.StoredAsset, relationType *string) (types.StoredAsset, error) {
 	if srcAsset == nil || relationType == nil {
-		return as.assetRepository.Insert(asset)
+		return as.assetRepository.Create(asset)
 	}
 
-	newAsset, err := as.assetRepository.Insert(asset)
+	newAsset, err := as.assetRepository.Create(asset)
 	if err != nil {
 		return types.StoredAsset{}, err
 	}
 
-	_, err = as.relationService.Insert(*relationType, newAsset.ID, srcAsset.ID)
+	_, err = as.relationService.Create(*relationType, newAsset.ID, srcAsset.ID)
 	if err != nil {
 		return types.StoredAsset{}, err
 	}
@@ -46,7 +46,7 @@ func (as *assetService) Insert(asset types.Asset, srcAsset *types.StoredAsset, r
 }
 
 func (as *assetService) Exist(asset types.Asset) (bool, error) {
-	storedAsset, err := as.GetByContent(asset)
+	storedAsset, err := as.FindByContent(asset)
 	if err != nil {
 		return false, err
 	}
@@ -54,15 +54,15 @@ func (as *assetService) Exist(asset types.Asset) (bool, error) {
 	return storedAsset.ID != "", nil
 }
 
-func (as *assetService) GetByContent(asset types.Asset) (types.StoredAsset, error) {
-	return as.assetRepository.GetByContent(asset)
+func (as *assetService) FindByContent(asset types.Asset) (types.StoredAsset, error) {
+	return as.assetRepository.FindByContent(asset)
 }
 
-func (as *assetService) GetById(id string) (types.StoredAsset, error) {
+func (as *assetService) FindById(id string) (types.StoredAsset, error) {
 	assetId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return types.StoredAsset{}, err
 	}
 
-	return as.assetRepository.GetById(assetId)
+	return as.assetRepository.FindById(assetId)
 }

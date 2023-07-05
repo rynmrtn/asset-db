@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	pgmigrations "github.com/owasp-amass/asset-db/migrations/postgres"
 	sqlitemigrations "github.com/owasp-amass/asset-db/migrations/sqlite3"
 	migrate "github.com/rubenv/sql-migrate"
@@ -89,25 +90,25 @@ func setupPostgres(dsn string) (*gorm.DB, error) {
 }
 
 func teardownPostgres(dsn string) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic(err)
-	}
+	// db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	migrationsSource := migrate.EmbedFileSystemMigrationSource{
-		FileSystem: pgmigrations.Migrations(),
-		Root:       "/",
-	}
+	// migrationsSource := migrate.EmbedFileSystemMigrationSource{
+	// 	FileSystem: pgmigrations.Migrations(),
+	// 	Root:       "/",
+	// }
 
-	sqlDb, err := db.DB()
-	if err != nil {
-		panic(err)
-	}
+	// sqlDb, err := db.DB()
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	_, err = migrate.Exec(sqlDb, "postgres", migrationsSource, migrate.Down)
-	if err != nil {
-		panic(err)
-	}
+	// _, err = migrate.Exec(sqlDb, "postgres", migrationsSource, migrate.Down)
+	// if err != nil {
+	// 	panic(err)
+	// }
 }
 
 func TestMain(m *testing.M) {
@@ -148,6 +149,24 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(0)
+}
+
+func TestDuplicateCreate(t *testing.T) {
+	source := domain.FQDN{Name: "owasp.com"}
+	as1, err := store.CreateAsset(source)
+	assert.NoError(t, err)
+
+	spew.Dump(as1)
+
+	as2, err := store.CreateAsset(source)
+	assert.Error(t, err)
+
+	// t.Fatalf(spew.Sdump(as1))
+	spew.Dump(as1)
+	spew.Dump(as2)
+	// comment to create an extra line
+
+	assert.True(t, as1.LastSeen.UnixNano() > as2.LastSeen.UnixNano())
 }
 
 func TestUnfilteredRelations(t *testing.T) {

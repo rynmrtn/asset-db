@@ -3,8 +3,10 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/owasp-amass/asset-db/types"
 	oam "github.com/owasp-amass/open-asset-model"
 	"github.com/owasp-amass/open-asset-model/domain"
@@ -73,6 +75,7 @@ func (sql *sqlRepository) CreateAsset(assetData oam.Asset) (*types.Asset, error)
 	if assets, err := sql.FindAssetByContent(assetData); err == nil && len(assets) > 0 {
 		for _, a := range assets {
 			if assetData.AssetType() == a.Asset.AssetType() {
+				sql.updateLastSeen(a)
 				return a, nil
 			}
 		}
@@ -93,10 +96,28 @@ func (sql *sqlRepository) CreateAsset(assetData oam.Asset) (*types.Asset, error)
 		return &types.Asset{}, result.Error
 	}
 
-	return &types.Asset{
-		ID:    strconv.FormatInt(asset.ID, 10),
-		Asset: assetData,
-	}, nil
+	return toOAMAssetContainer(asset)
+}
+
+// updateLastSeen updates the last seen timestamp of the provided asset
+// to the time used by the database.
+func (sql *sqlRepository) updateLastSeen(a *types.Asset) error {
+	id, _ := strconv.ParseInt(a.ID, 10, 64)
+	result := sql.db.Debug().Raw(
+		"UPDATE assets SET last_seen = current_timestamp WHERE id = ?", id,
+	)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	check, err := sql.FindAssetById(a.ID)
+	if err != nil {
+		log.Println("Error: ", err)
+		return err
+	}
+	log.Println("Check: ", spew.Sdump(check))
+
+	return nil
 }
 
 // FindAssetByContent finds assets in the database that match the provided asset data.
@@ -127,15 +148,12 @@ func (sql *sqlRepository) FindAssetByContent(assetData oam.Asset) ([]*types.Asse
 
 	var storedAssets []*types.Asset
 	for _, asset := range assets {
-		assetData, err := asset.Parse()
-		if err != nil {
+		if ta, err := toOAMAssetContainer(asset); err == nil {
+			storedAssets = append(storedAssets, ta)
+		} else {
+			log.Printf("Error converting asset: %s", err)
 			return []*types.Asset{}, err
 		}
-
-		storedAssets = append(storedAssets, &types.Asset{
-			ID:    strconv.FormatInt(asset.ID, 10),
-			Asset: assetData,
-		})
 	}
 
 	return storedAssets, nil
@@ -156,15 +174,7 @@ func (sql *sqlRepository) FindAssetById(id string) (*types.Asset, error) {
 		return &types.Asset{}, result.Error
 	}
 
-	assetData, err := asset.Parse()
-	if err != nil {
-		return &types.Asset{}, err
-	}
-
-	return &types.Asset{
-		ID:    strconv.FormatInt(asset.ID, 10),
-		Asset: assetData,
-	}, nil
+	return toOAMAssetContainer(asset)
 }
 
 // FindAssetByScope finds assets in the database by applying all the scope constraints provided.
@@ -187,11 +197,11 @@ func (sql *sqlRepository) FindAssetByScope(constraints ...oam.Asset) ([]*types.A
 		}
 
 		for _, a := range assets {
-			if f, err := a.Parse(); err == nil {
-				names = append(names, &types.Asset{
-					ID:    strconv.FormatInt(a.ID, 10),
-					Asset: f,
-				})
+			if ta, err := toOAMAssetContainer(a); err == nil {
+				names = append(names, ta)
+			} else {
+				log.Println("Skipping unknown asset: ", err)
+				continue
 			}
 		}
 	}
@@ -215,11 +225,11 @@ func (sql *sqlRepository) FindAssetByType(atype oam.AssetType) ([]*types.Asset, 
 
 	var results []*types.Asset
 	for _, a := range assets {
-		if f, err := a.Parse(); err == nil {
-			results = append(results, &types.Asset{
-				ID:    strconv.FormatInt(a.ID, 10),
-				Asset: f,
-			})
+		if ta, err := toOAMAssetContainer(a); err == nil {
+			results = append(results, ta)
+		} else {
+			log.Println("Skipping unknown asset: ", err)
+			continue
 		}
 	}
 
@@ -337,6 +347,21 @@ func (sql *sqlRepository) OutgoingRelations(asset *types.Asset, relationTypes ..
 	}
 
 	return toRelations(relations), nil
+}
+
+func toOAMAssetContainer(a Asset) (*types.Asset, error) {
+	assetData, err := a.Parse()
+	if err != nil {
+		return &types.Asset{}, err
+	}
+
+	return &types.Asset{
+		ID:        strconv.FormatInt(a.ID, 10),
+		Type:      a.Type,
+		CreatedAt: a.CreatedAt,
+		LastSeen:  a.LastSeen,
+		Asset:     assetData,
+	}, nil
 }
 
 // toRelation converts a database Relation to a types.Relation.
